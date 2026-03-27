@@ -35,16 +35,15 @@ class ImportCardCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         ini_set('memory_limit', '2G');
-        // On récupère le temps actuel
         $io = new SymfonyStyle($input, $output);
         $filepath = __DIR__ . '/../../data/cards.csv';
-        $handle = fopen($filepath, 'r');
 
-        // On récupère le temps actuel
         $start = microtime(true);
+        $this->logger->info('Import started', ['file' => $filepath]);
 
-        $this->logger->info('Importing cards from ' . $filepath);
+        $handle = fopen($filepath, 'r');
         if ($handle === false) {
+            $this->logger->error('Import failed: file not found', ['file' => $filepath]);
             $io->error('File not found');
             return Command::FAILURE;
         }
@@ -91,6 +90,12 @@ class ImportCardCommand extends Command
 
         $end = microtime(true);
         $timeElapsed = $end - $start;
+        $this->logger->info('Import finished', [
+            'total_rows' => $total,
+            'imported' => $imported,
+            'skipped' => $total - $imported,
+            'duration_seconds' => round($timeElapsed, 2),
+        ]);
         $io->success(sprintf(
             'Processed %d rows: %d imported, %d skipped (already in DB) in %.2f seconds',
             $total,
