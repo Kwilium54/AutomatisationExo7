@@ -23,16 +23,17 @@ class ApiCardController extends AbstractController
     ) {
     }
     #[Route('/all', name: 'List all cards', methods: ['GET'])]
-    #[OA\Get(description: 'Return all cards in the database, optionally filtered by setCode')]
+    #[OA\Get(description: 'Return paginated cards (100 per page), optionally filtered by setCode')]
     #[OA\Parameter(name: 'setCode', description: 'Filter by set code', in: 'query', required: false, schema: new OA\Schema(type: 'string'))]
-    #[OA\Response(response: 200, description: 'List all cards')]
+    #[OA\Parameter(name: 'page', description: 'Page number (default: 1)', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Paginated list of cards with total, page and totalPages')]
     public function cardAll(Request $request): Response
     {
         $setCode = $request->query->get('setCode');
-        $this->logger->info('API call: GET /api/card/all', ['setCode' => $setCode]);
-        $criteria = $setCode !== null ? ['setCode' => $setCode] : [];
-        $cards = $this->entityManager->getRepository(Card::class)->findBy($criteria);
-        return $this->json($cards);
+        $page = max(1, (int) $request->query->get('page', 1));
+        $this->logger->info('API call: GET /api/card/all', ['setCode' => $setCode, 'page' => $page]);
+        $result = $this->cardRepository->findPaginated($page, 100, $setCode ?: null);
+        return $this->json($result);
     }
 
     #[Route('/set-codes', name: 'List all set codes', methods: ['GET'])]

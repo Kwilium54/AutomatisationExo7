@@ -46,7 +46,7 @@ class ViteAssetExtension extends AbstractExtension
         $asset = $this->readManifest()[$entrypoint]['file'];
 
         return "
-            <script type=\"module\" src=\"build/$asset\"></script>
+            <script type=\"module\" src=\"/build/$asset\"></script>
         ";
     }
 
