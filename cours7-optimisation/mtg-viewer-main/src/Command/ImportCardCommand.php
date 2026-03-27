@@ -49,44 +49,67 @@ class ImportCardCommand extends Command
             return Command::FAILURE;
         }
 
-        $i = 0;
+        $total = 0;
+        $imported = 0;
         $this->csvHeader = fgetcsv($handle);
-        $uuidInDatabase = $this->entityManager->getRepository(Card::class)->getAllUuids();
+
+        // array_flip() transforme le tableau ["uuid1", "uuid2", ...] en {"uuid1": 0, "uuid2": 1, ...}
+        // Cela permet d'utiliser isset() qui est O(1) au lieu de in_array() qui est O(n)
+        // Sans cela, avec 30 000 UUIDs en base, chaque ligne du CSV déclenchait un parcours complet du tableau
+        $uuidInDatabase = array_flip(
+            $this->entityManager->getRepository(Card::class)->getAllUuids()
+        );
 
         $progressIndicator = new ProgressIndicator($output);
         $progressIndicator->start('Importing cards...');
 
         while (($row = $this->readCSV($handle)) !== false) {
-            $i++;
+            // Ligne malformée, on la saute
+            if ($row === null) {
+                continue;
+            }
+            $total++;
 
-            if (!in_array($row['uuid'], $uuidInDatabase)) {
+            if (!isset($uuidInDatabase[$row['uuid']])) {
                 $this->addCard($row);
+                // On ajoute l'UUID au dictionnaire pour éviter les doublons dans le même CSV
+                $uuidInDatabase[$row['uuid']] = true;
+                $imported++;
             }
 
-            if ($i % 2000 === 0) {
+            if ($total % 2000 === 0) {
                 $this->entityManager->flush();
                 $this->entityManager->clear();
                 $progressIndicator->advance();
             }
         }
-        // Toujours flush en sorti de boucle
+        // Toujours flush en sortie de boucle
         $this->entityManager->flush();
         $progressIndicator->finish('Importing cards done.');
 
         fclose($handle);
 
-        // On récupère le temps actuel, et on calcule la différence avec le temps de départ
         $end = microtime(true);
         $timeElapsed = $end - $start;
-        $io->success(sprintf('Imported %d cards in %.2f seconds', $i, $timeElapsed));
+        $io->success(sprintf(
+            'Processed %d rows: %d imported, %d skipped (already in DB) in %.2f seconds',
+            $total,
+            $imported,
+            $total - $imported,
+            $timeElapsed
+        ));
         return Command::SUCCESS;
     }
 
-    private function readCSV(mixed $handle): array|false
+    private function readCSV(mixed $handle): array|null|false
     {
         $row = fgetcsv($handle);
         if ($row === false) {
             return false;
+        }
+        // Ignore les lignes malformées (nombre de colonnes différent du header)
+        if (count($row) !== count($this->csvHeader)) {
+            return null;
         }
         return array_combine($this->csvHeader, $row);
     }
