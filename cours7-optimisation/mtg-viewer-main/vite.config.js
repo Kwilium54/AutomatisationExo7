@@ -6,7 +6,8 @@ export default defineConfig({
     root: './assets',
     base: '/build/',
     server: {
-        port: 3000,
+        port: 3001,
+        cors: true,
     },
     envDir: '../',
     build: {
