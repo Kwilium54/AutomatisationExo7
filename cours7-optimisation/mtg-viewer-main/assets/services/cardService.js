@@ -1,9 +1,9 @@
-export async function fetchAllCards(setCode = null) {
-    const url = setCode ? `/api/card/all?setCode=${encodeURIComponent(setCode)}` : '/api/card/all';
-    const response = await fetch(url);
+export async function fetchAllCards(setCode = null, page = 1) {
+    const params = new URLSearchParams({ page });
+    if (setCode) params.append('setCode', setCode);
+    const response = await fetch(`/api/card/all?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch cards');
-    const result = await response.json();
-    return result;
+    return await response.json();
 }
 
 export async function fetchCard(uuid) {

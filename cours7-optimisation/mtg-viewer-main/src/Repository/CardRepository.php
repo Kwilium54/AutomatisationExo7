@@ -45,6 +45,34 @@ class CardRepository extends ServiceEntityRepository
         return array_column($result, 'setCode');
     }
 
+    public function findPaginated(int $page, int $limit = 100, ?string $setCode = null): array
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        if ($setCode !== null) {
+            $qb->where('c.setCode = :setCode')
+               ->setParameter('setCode', $setCode);
+        }
+
+        $total = (int) (clone $qb)
+            ->select('COUNT(c.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $items = $qb
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return [
+            'items' => $items,
+            'page' => $page,
+            'totalPages' => (int) ceil($total / $limit),
+            'total' => $total,
+        ];
+    }
+
     /**
      * @return Card[]
      */
