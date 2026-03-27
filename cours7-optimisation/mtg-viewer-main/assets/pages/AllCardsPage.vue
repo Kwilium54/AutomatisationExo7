@@ -1,25 +1,40 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { fetchAllCards } from '../services/cardService';
+import { onMounted, ref, watch } from 'vue';
+import { fetchAllCards, fetchSetCodes } from '../services/cardService';
 
 const cards = ref([]);
+const setCodes = ref([]);
+const selectedSetCode = ref('');
 const loadingCards = ref(true);
+const loadingSetCodes = ref(true);
 
 async function loadCards() {
     loadingCards.value = true;
-    cards.value = await fetchAllCards();
+    cards.value = await fetchAllCards(selectedSetCode.value || null);
     loadingCards.value = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
+    try {
+        setCodes.value = await fetchSetCodes();
+    } finally {
+        loadingSetCodes.value = false;
+    }
     loadCards();
 });
 
+watch(selectedSetCode, () => {
+    loadCards();
+});
 </script>
 
 <template>
     <div>
         <h1>Toutes les cartes</h1>
+        <select v-model="selectedSetCode" :disabled="loadingSetCodes">
+            <option value="">Toutes les éditions</option>
+            <option v-for="code in setCodes" :key="code" :value="code">{{ code }}</option>
+        </select>
     </div>
     <div class="card-list">
         <div v-if="loadingCards">Loading...</div>
