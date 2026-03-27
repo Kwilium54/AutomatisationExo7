@@ -23,6 +23,6 @@ services:
     App\Twig\Extension\ViteAssetExtension:
         arguments:
             $isDev: '%env(VITE_DEV)%'
-            $manifestPath: '%kernel.project_dir%/public/build/manifest.json'
+            $manifestPath: '%kernel.project_dir%/public/build/.vite/manifest.json'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -36,8 +36,8 @@ class ViteAssetExtension extends AbstractExtension
     private function generateViteScriptTagsDev(string $entrypoint): string
     {
         return "
-            <script type=\"module\" src=\"http://localhost:3000/build/@vite/client\"></script>
-            <script type=\"module\" src=\"http://localhost:3000/build/$entrypoint\"></script>
+            <script type=\"module\" src=\"http://localhost:3001/build/@vite/client\"></script>
+            <script type=\"module\" src=\"http://localhost:3001/build/$entrypoint\"></script>
         ";
     }
 
